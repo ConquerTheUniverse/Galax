@@ -10,7 +10,7 @@ class Modele:
         self.surfaceY = 80
         self.nbEtoiles = 0
         self.listeEtoiles = []
-        #Creation d'un objet pour chaque faction pour savoir differentes informations sur chacune des races
+        #Creation d'un objet pour chaque faction pour savoir differentes informations sur chacune de celle-ci
         self.humain = Humain()
         self.gubrus = Gubrus()
         self.czin = Czin()
@@ -20,7 +20,7 @@ class Modele:
         #Creer un nombre d'etoile aleatoire entre 50 et 70
         self.nbEtoiles = random.randint(50,70)
 
-        #Vider les ancinnes valeurs de la liste si il y en a
+        #Vider les anciennes valeurs de la liste si il y en a
         self.listeEtoiles[:] = []
 
         #Creer le nombre d'etoile en fonction de la variable nbEtoiles(50 a 70)

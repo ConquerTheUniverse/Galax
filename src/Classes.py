@@ -35,7 +35,7 @@ class flotteDeVaisseaux:
         else:
             distance = differenceY
 
-        #Calculer l'anne d'arrivee
+        #Calculer l'annee d'arrivee
         if(distance <= 2):
             duree = distance / 2
         else:
