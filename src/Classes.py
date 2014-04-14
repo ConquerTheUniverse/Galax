@@ -4,12 +4,12 @@ class Humains:
         pass
 
 #Contiendra toutes les informations relatives aux Gubrus
-class Grubus:
+class Gubrus:
     def __init__(self):
         pass
 
 #Contiendras toutes les informations relatives aux Czins
-class Czin:
+class Czins:
     def __init__(self):
         pass
 
@@ -47,8 +47,8 @@ class flotteDeVaisseaux:
         
             
 #Classe qui represente une etoile(manufactures, vaisseaux, etc.)
-class etoile:
-    def __init__(self, posX, posY, nbManufactures, appartenance)
+class Etoile:
+    def __init__(self, posX, posY, nbManufactures, appartenance):
         self.posX = posX #Position en X de l'etoile sur la surface de jeu
         self.posY = posY #Position en Y de l'etoile sur la surface de jeu
         self.appartenance = appartenance #A qui cette etoile appartient (0 = Neutre, 1 = Humain, 2 = Gubrus et 3 = Czin)
