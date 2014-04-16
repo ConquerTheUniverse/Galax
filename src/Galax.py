@@ -54,14 +54,37 @@ class Modele:
             #Lorsqu'on reussit a trouver un x et un y qui est a la bonne distance on cree l'etoile a cette position 
             nbM = random.randint(4,10) #Nombre aleatoire de Manufactures entre 4 et 10
             self.listeEtoiles.append(Classes.Etoile(x, y, nbM, 0))
-            
+
+    
+        
             
 
     #Fonction permettant de creer une etoile-mere pour chacune des factions(Humains, Grubus et Czin)         
     def assignerLesEtoilesMeres(self):
-        pass
+
+        positionOK = False 
+        n = random.randint(0,self.nbEtoiles-1)
+        print(n)
+        
+        self.listeEtoiles[n].proprietaire = 1
+        self.listeEtoiles[n].niveauInfo = 3
+
+        
+
+        while(positionOK == False):
+
+            n = random.randint(0,self.nbEtoiles)
+            
+            if(self.listeEtoiles[n].proprietaire != 1):
+                self.listeEtoiles[n].proprietaire = 2
                 
+                n = random.randint(0,self.nbEtoiles)
+            
+                if(self.listeEtoiles[n].proprietaire != 1 and self.listeEtoiles[n].proprietaire != 2):
+                    self.listeEtoiles[n].proprietaire = 3
+                    positionOK=True
                 
+        
             
         
         
@@ -88,13 +111,9 @@ class Vue:
         self.backgroundMenu = PhotoImage(file="images/bgMenu.gif")
 
         #Resize des planetes
-        self.imagePlanete1 = self.imagePlanete1.zoom(1,1)
         self.imagePlanete1 = self.imagePlanete1.subsample(30,30)
-        self.imagePlanete2 = self.imagePlanete2.zoom(1,1)
         self.imagePlanete2 = self.imagePlanete2.subsample(30,30)
-        self.imagePlanete3 = self.imagePlanete3.zoom(1,1)
         self.imagePlanete3 = self.imagePlanete3.subsample(30,30)
-        self.imagePlanete4 = self.imagePlanete4.zoom(1,1)
         self.imagePlanete4 = self.imagePlanete4.subsample(30,30)
 
         #Elements du menu
@@ -180,9 +199,22 @@ class Vue:
 
         #Place le bouton pour changer d'annee
         self.boutonChangerAnnee.place(x=1025, y=750, width=150)
-        
 
-    
+    #Affiche les proprietaires sur les planetes
+    def afficherProprietaire(self, modele):
+
+        for etoile in modele.listeEtoiles:
+            print(etoile.proprietaire)
+            
+            if(etoile.proprietaire == 1):
+                self.imageHumains = self.imageHumains.subsample(3,3)
+                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageHumains, tags="logo")
+            elif(etoile.proprietaire == 2):
+                self.imageGubrus = self.imageGubrus.subsample(3,3)
+                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageGubrus, tags="logo")
+            elif(etoile.proprietaire == 3):
+                self.imageCzins = self.imageCzins.subsample(3,3)
+                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageCzins, tags="logo")
     
 
 class Controleur:
@@ -190,7 +222,9 @@ class Controleur:
         modele = Modele(self)
         vue = Vue(self)
         modele.creerEtoiles()
+        modele.assignerLesEtoilesMeres()
         vue.afficherJeu(modele)
+        vue.afficherProprietaire(modele)
         vue.root.mainloop()
         
 

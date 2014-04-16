@@ -1,3 +1,5 @@
+import math
+
 #Contiendra toutes les informations relatives aux Humains (Joueur)
 class Humains:
     def __init__(self):
@@ -27,13 +29,8 @@ class flotteDeVaisseaux:
         differenceX = abs(etoileDepart.posX - self.destination.posX)
         differenceY = abs(etoileDepart.posY - self.destination.posY)
 
-        #Si le X est plus grand
-        if(differenceX > differenceY):
-            distance = differenceX
-           
-        #Si le Y est plus grand ou si les deux sont egaux
-        else:
-            distance = differenceY
+        #Calculer la distance a l'aide du theoreme de pythagore
+        distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
 
         #Calculer l'annee d'arrivee
         if(distance <= 2):
@@ -48,10 +45,14 @@ class flotteDeVaisseaux:
             
 #Classe qui represente une etoile(manufactures, vaisseaux, etc.)
 class Etoile:
-    def __init__(self, posX, posY, nbManufactures, appartenance):
+    def __init__(self, posX, posY, nbManufactures, proprietaire):
         self.posX = posX #Position en X de l'etoile sur la surface de jeu
         self.posY = posY #Position en Y de l'etoile sur la surface de jeu
-        self.appartenance = appartenance #A qui cette etoile appartient (0 = Neutre, 1 = Humain, 2 = Gubrus et 3 = Czin)
+        self.proprietaire = proprietaire #A qui cette etoile appartient (0 = Neutre, 1 = Humain, 2 = Gubrus et 3 = Czin)
         self.nbManufactures = nbManufactures #Nb de manufactures sur l'etoile
         self.nbVaisseaux = 0 #Nb de vaisseau sur l'etoile
+        self.niveauInfo = 0 
+        self.nbVaisseuxDerniereVisite = 0 #Nb de vaisseau lors de la derniere visite
+        valeur_grappe = 0 #Nb d'etoiles qui sont a 4 ou moins de distance
+        valeur_base = 0 
         
