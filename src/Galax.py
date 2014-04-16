@@ -10,10 +10,13 @@ class Modele:
         self.surfaceY = 40
         self.nbEtoiles = 0
         self.listeEtoiles = []
+        self.etoileDepart = None
+        self.etoileArrivee = None
         #Creation d'un objet pour chaque faction pour savoir differentes informations sur chacune de celle-ci
         self.humain = Classes.Humains()
         self.gubrus = Classes.Gubrus()
         self.czin = Classes.Czins()
+        
 
     #Permet de creer toutes les etoiles au debut de la partie
     def creerEtoiles(self):
@@ -63,7 +66,7 @@ class Modele:
     def assignerLesEtoilesMeres(self):
 
         positionOK = False 
-        n = random.randint(0,self.nbEtoiles-1)
+        n = random.randint(0,len(self.listeEtoiles))
         print(n)
         
         self.listeEtoiles[n].proprietaire = 1
@@ -73,18 +76,29 @@ class Modele:
 
         while(positionOK == False):
 
-            n = random.randint(0,self.nbEtoiles)
+            n = random.randint(0,len(self.listeEtoiles))
             
             if(self.listeEtoiles[n].proprietaire != 1):
                 self.listeEtoiles[n].proprietaire = 2
+                self.listeEtoiles[n].nbVaisseaux = 100
+                self.listeEtoiles[n].nbManufactures = 10
+                positionOK=True
                 
-                n = random.randint(0,self.nbEtoiles)
             
-                if(self.listeEtoiles[n].proprietaire != 1 and self.listeEtoiles[n].proprietaire != 2):
-                    self.listeEtoiles[n].proprietaire = 3
-                    positionOK=True
+        positionOK = False
+        
+        while(positionOK == False):
+
+            n = random.randint(0,len(self.listeEtoiles))
+        
+            if(self.listeEtoiles[n].proprietaire != 1 and self.listeEtoiles[n].proprietaire != 2):
+                self.listeEtoiles[n].proprietaire = 3
+                self.listeEtoiles[n].nbVaisseaux = 100
+                self.listeEtoiles[n].nbManufactures = 10
+                positionOK=True
                 
         
+            
             
         
         
@@ -99,6 +113,8 @@ class Vue:
         self.height = 800
         self.root.geometry(str(self.width)+"x"+str(self.height))
 
+        
+        
         #Images
         self.imageHumains = PhotoImage(file="images/logoHumains.gif")
         self.imageGubrus = PhotoImage(file="images/logoGubrus.gif")
@@ -124,7 +140,7 @@ class Vue:
         #Widgets pour l'affichage du jeu
         self.surfaceJeu = Canvas(self.root, width=1000, height=800, bg='white', highlightthickness=0)
         self.labelHumains = Label(self.root, text="Humains : 1", font=("Arial",16))
-        self.labelGubrus = Label(self.root, text="Grubus : 1", font=("Arial",16))
+        self.labelGubrus = Label(self.root, text="Gubrus : 1", font=("Arial",16))
         self.labelCzins = Label(self.root, text="Czins : 1", font=("Arial",16))
         self.boutonChangerAnnee = Button(self.root, text='Annee Suivante',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
         
@@ -144,10 +160,15 @@ class Vue:
         self.imageTempC = self.imageTempC.subsample(2,2)
         self.logoCzins = Label(self.root, image=self.imageTempC)
 
+        #Keybinds
+        self.surfaceJeu.bind('<Button-1>', self.getMouseClick)
         
         
-        
+    #Obtenir le click de souris sur la surface   
+    def getMouseClick(self, event):
 
+        self.parent.transmissionMouseClick(event.x, event.y)
+            
         
 
     #Afficher le menu principal
@@ -202,7 +223,9 @@ class Vue:
 
     #Affiche les proprietaires sur les planetes
     def afficherProprietaire(self, modele):
-
+        
+        self.surfaceJeu.delete("logo")
+        
         for etoile in modele.listeEtoiles:
             print(etoile.proprietaire)
             
@@ -215,17 +238,61 @@ class Vue:
             elif(etoile.proprietaire == 3):
                 self.imageCzins = self.imageCzins.subsample(3,3)
                 self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageCzins, tags="logo")
+
+    #Affiche les informations de la planete selectione
+    def afficherInformations(self):
+        pass
+        
+            
     
 
 class Controleur:
     def __init__(self):
-        modele = Modele(self)
-        vue = Vue(self)
-        modele.creerEtoiles()
-        modele.assignerLesEtoilesMeres()
-        vue.afficherJeu(modele)
-        vue.afficherProprietaire(modele)
-        vue.root.mainloop()
+        self.modele = Modele(self)
+        self.vue = Vue(self)
+        self.modele.creerEtoiles()
+        self.modele.assignerLesEtoilesMeres()
+        self.vue.afficherJeu(self.modele)
+        self.vue.afficherProprietaire(self.modele)
+        self.etoileClique = False
+        self.vue.root.mainloop()
+
+    
+    def transmissionMouseClick(self, x, y):
+        
+        self.vue.surfaceJeu.delete("selection")
+
+        print(len(self.modele.listeEtoiles))
+        for i in range(0, len(self.modele.listeEtoiles)):
+
+            if(self.modele.listeEtoiles[i].posX*20 <= x and self.modele.listeEtoiles[i].posX*20+20 >= x):
+                if(self.modele.listeEtoiles[i].posY*20 <= y and self.modele.listeEtoiles[i].posY*20+20 >= y):
+                
+                    #Si l'etoile de depart n'est pas selectionné
+                    if(self.modele.etoileDepart == None):
+                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='red', tags="selection")
+                        self.modele.etoileDepart = i
+                        self.etoileClique = True
+                        print("trouve")
+                        
+                    else:
+                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+30, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+30, dash=(4,4), outline='red', tags="selection")
+                        if(i != self.modele.etoileDepart):
+                            self.modele.etoileArrivee = i
+                            self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='green', tags="selection")
+                            self.vue.surfaceJeu.create_line(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+10,self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posX*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posY*20+10, fill='blue', tags="selection")
+                            self.etoileClique = False
+                    break
+
+                     
+            #Sinon set les etoiles selectionnées a None
+            elif(self.etoileClique == False):
+                print("le else")
+                self.modele.etoileDepart = None
+                self.modele.etoileArrivee = None
+                self.etoileClique = True
+                
+    
         
 
 if __name__ == "__main__":
