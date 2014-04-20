@@ -7,7 +7,7 @@ class Modele:
         self.parent = parent
         #Pour une surface de 1000x800 px ou les etoiles sont des cases de 10 x 10 px
         self.surfaceX = 50
-        self.surfaceY = 40
+        self.surfaceY = 37
         self.nbEtoiles = 0
         self.listeEtoiles = []
         self.etoileDepart = None
@@ -68,9 +68,13 @@ class Modele:
         positionOK = False 
         n = random.randint(0,len(self.listeEtoiles))
         print(n)
-        
+
+        self.listeEtoiles[n].nbVaisseaux = 100
+        self.listeEtoiles[n].nbManufactures = 10
         self.listeEtoiles[n].proprietaire = 1
         self.listeEtoiles[n].niveauInfo = 3
+        
+        self.humain.etoileMere = n
 
         
 
@@ -82,6 +86,7 @@ class Modele:
                 self.listeEtoiles[n].proprietaire = 2
                 self.listeEtoiles[n].nbVaisseaux = 100
                 self.listeEtoiles[n].nbManufactures = 10
+                self.gubrus.etoileMere = n
                 positionOK=True
                 
             
@@ -95,10 +100,12 @@ class Modele:
                 self.listeEtoiles[n].proprietaire = 3
                 self.listeEtoiles[n].nbVaisseaux = 100
                 self.listeEtoiles[n].nbManufactures = 10
+                self.czin.base = n
+                self.czin.etoileMere = n
                 positionOK=True
                 
         
-            
+    
             
         
         
@@ -138,12 +145,12 @@ class Vue:
         self.boutonQuitter = Button(self.root, text='Quitter',width=50, bg='black', fg='white',activebackground='black', activeforeground='white', command=self.root.destroy)
         
         #Widgets pour l'affichage du jeu
-        self.surfaceJeu = Canvas(self.root, width=1000, height=800, bg='white', highlightthickness=0)
+        self.surfaceJeu = Canvas(self.root, width=1000, height=740, bg='white', highlightthickness=0)
         self.labelHumains = Label(self.root, text="Humains : 1", font=("Arial",16))
         self.labelGubrus = Label(self.root, text="Gubrus : 1", font=("Arial",16))
         self.labelCzins = Label(self.root, text="Czins : 1", font=("Arial",16))
         self.boutonChangerAnnee = Button(self.root, text='Annee Suivante',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
-        
+        self.choisirNbVaisseaux = Scale(self.root, orient=HORIZONTAL, length=300)
 
 
         #Label contenant les images pour le panel sur le cote
@@ -161,14 +168,17 @@ class Vue:
         self.logoCzins = Label(self.root, image=self.imageTempC)
 
         #Keybinds
-        self.surfaceJeu.bind('<Button-1>', self.getMouseClick)
+        self.surfaceJeu.bind('<Button-1>', self.getLeftClick)
+        self.surfaceJeu.bind('<Button-3>', self.getRightClick)
         
         
     #Obtenir le click de souris sur la surface   
-    def getMouseClick(self, event):
+    def getLeftClick(self, event):
 
         self.parent.transmissionMouseClick(event.x, event.y)
-            
+
+    def getRightClick(self, event):
+        pass
         
 
     #Afficher le menu principal
@@ -221,6 +231,7 @@ class Vue:
         #Place le bouton pour changer d'annee
         self.boutonChangerAnnee.place(x=1025, y=750, width=150)
 
+
     #Affiche les proprietaires sur les planetes
     def afficherProprietaire(self, modele):
         
@@ -261,6 +272,7 @@ class Controleur:
     def transmissionMouseClick(self, x, y):
         
         self.vue.surfaceJeu.delete("selection")
+        self.vue.choisirNbVaisseaux.place_forget()
 
         print(len(self.modele.listeEtoiles))
         for i in range(0, len(self.modele.listeEtoiles)):
@@ -269,18 +281,21 @@ class Controleur:
                 if(self.modele.listeEtoiles[i].posY*20 <= y and self.modele.listeEtoiles[i].posY*20+20 >= y):
                 
                     #Si l'etoile de depart n'est pas selectionné
-                    if(self.modele.etoileDepart == None):
+                    if(self.modele.etoileDepart == None and self.modele.listeEtoiles[i].proprietaire == 1):
                         self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='red', tags="selection")
                         self.modele.etoileDepart = i
                         self.etoileClique = True
                         print("trouve")
                         
-                    else:
+                    elif(self.modele.etoileDepart != None):
                         self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+30, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+30, dash=(4,4), outline='red', tags="selection")
                         if(i != self.modele.etoileDepart):
                             self.modele.etoileArrivee = i
                             self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='green', tags="selection")
                             self.vue.surfaceJeu.create_line(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+10,self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posX*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posY*20+10, fill='blue', tags="selection")
+                            self.vue.choisirNbVaisseaux.config(from_=0, to = self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
+                            print(self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
+                            self.vue.choisirNbVaisseaux.place(x=50, y=740, width=500)
                             self.etoileClique = False
                     break
 

@@ -3,24 +3,71 @@ import math
 #Contiendra toutes les informations relatives aux Humains (Joueur)
 class Humains:
     def __init__(self):
-        pass
+        self.etoileMere = 0
 
 #Contiendra toutes les informations relatives aux Gubrus
 class Gubrus:
     def __init__(self):
-        pass
+        self.etoileMere = 0
 
 #Contiendras toutes les informations relatives aux Czins
 class Czins:
     def __init__(self):
-        pass
+        self.etoileMere = 0
+        self.base = 0
+
+    def definirValeurGrappe(self, modele):
+
+        distance_grappe = 4
+        
+        for etoileValeurGrappe in modele.listeEtoile:
+        
+            for etoileACompter in modele.listeEtoile:
+                #Si les deux etoiles ne sont pas la meme
+                if(etoileACompter != etoileValeurGrappe):
+
+                    #Pour calculer la distance
+                    differenceX = abs(etoileValeurGrappe.posX - etoileACompter.posX)
+                    differenceY = abs(etoileValeurGrappe.posY - etoileACompter.posY)
+
+                    #Calculer la distance a l'aide du theoreme de pythagore
+                    distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
+                
+                    #Si la position est au moins a 4 de difference
+                    if(distance <= distance_grappe):
+                        s = distance_grappe - distance + 1
+                        etoileValeurGrappe.valeur_grappe += s
+                    
+                        
+
+
+    def definirValeurBase(self, modele):
+        
+        for etoile in modele.listeEtoile:
+
+            #Pour calculer la distance
+            differenceX = abs(etoile.posX - modele.listeEtoile[self.etoileMere].posX)
+            differenceY = abs(etoile.posY - modele.listeEtoile[self.etoileMere].posY)
+
+            #Calculer la distance a l'aide du theoreme de pythagore
+            distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
+
+            #Si la valeur_grappe = 0
+            if(etoile.valeur_grappe == 0):
+                etoile.valeur_base = 0
+            else:
+                etoile.valeur_base = etoile.valeur_grappe-3 * distance
+
+    
+        
 
 #Classe qui represente une flotte de vaisseau(Nb, Destination, etc.)
 class flotteDeVaisseaux:
-    def __init__(self, quantiteVaisseaux, destination):
+    def __init__(self, quantiteVaisseaux, destination, proprietaire):
         self.quantiteVaisseaux = quantiteVaisseaux
         self.destination = destination
         self.anneeArrivee = 0
+        self.proprietaire = proprietaire
         
 
     #Permet de calculer l'annee d'arrivee en fonction de la destination
