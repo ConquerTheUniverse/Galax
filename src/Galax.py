@@ -1,4 +1,4 @@
-from tkinter import *
+from Tkinter import *
 import Classes
 import random
 
@@ -13,9 +13,10 @@ class Modele:
         self.etoileDepart = None
         self.etoileArrivee = None
         #Creation d'un objet pour chaque faction pour savoir differentes informations sur chacune de celle-ci
-        self.humain = Classes.Humains()
-        self.gubrus = Classes.Gubrus()
-        self.czin = Classes.Czins()
+        self.humain = Classes.Humains(self)
+        self.gubrus = Classes.Gubrus(self)
+        self.czin = Classes.Czins(self)
+        self.flottesVaisseaux = [] # liste d'objets de type Classes.flotteDeVaisseaux
         
 
     #Permet de creer toutes les etoiles au debut de la partie
@@ -198,7 +199,7 @@ class Vue:
         #Place la surface de jeu
         self.surfaceJeu.place(x=0,y=0)
 
-        #Boucle pour afficher cahcune des etoiles
+        #Boucle pour afficher chacune des etoiles
         for y in range(0, modele.surfaceY):
             for x in range(0, modele.surfaceX):
                 for etoile in modele.listeEtoiles:                  
@@ -280,7 +281,7 @@ class Controleur:
             if(self.modele.listeEtoiles[i].posX*20 <= x and self.modele.listeEtoiles[i].posX*20+20 >= x):
                 if(self.modele.listeEtoiles[i].posY*20 <= y and self.modele.listeEtoiles[i].posY*20+20 >= y):
                 
-                    #Si l'etoile de depart n'est pas selectionné
+                    #Si l'etoile de depart n'est pas selectionnee
                     if(self.modele.etoileDepart == None and self.modele.listeEtoiles[i].proprietaire == 1):
                         self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='red', tags="selection")
                         self.modele.etoileDepart = i
@@ -300,16 +301,19 @@ class Controleur:
                     break
 
                      
-            #Sinon set les etoiles selectionnées a None
+            #Sinon set les etoiles selectionnees a None
             elif(self.etoileClique == False):
                 print("le else")
                 self.modele.etoileDepart = None
                 self.modele.etoileArrivee = None
                 self.etoileClique = True
                 
+    def deroulerTour(self):
+        pass 
     
+    def combatVaisseau(self):
+        pass
         
-
 if __name__ == "__main__":
     c = Controleur()
     

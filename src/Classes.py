@@ -2,19 +2,57 @@ import math
 
 #Contiendra toutes les informations relatives aux Humains (Joueur)
 class Humains:
-    def __init__(self):
+    def __init__(self, parent):
+        self.parent = parent
         self.etoileMere = 0
+        self.nbEtoiles = 0
+        self.listePossessions = [] #initialisation de la liste des Etoiles possedees par les humains
+        self.listeFlottes = [] #initialisation de la liste de flottes creees par les humains
 
 #Contiendra toutes les informations relatives aux Gubrus
 class Gubrus:
-    def __init__(self):
+    def __init__(self, parent):
+        # constantes
+        NB_VAISSEAUX_PAR_ATTAQUE = 5
+        FORCE_ATTAQUE_BASIQUE =10
+        
+        # variables
+        self.parent = parent
         self.etoileMere = 0
+        self.nbEtoiles = 0
+        self.listePossession = [] 
+        self.listeFlotte = []
+        
+    def strategieAttaque(self):
+        pass
+    
+    
+    def forceAttaque(self):
+        pass
+    
+    
+    def formationDeFlotte(self):
+        pass
 
 #Contiendras toutes les informations relatives aux Czins
 class Czins:
-    def __init__(self):
+    def __init__(self, parent):
+        # constantes
+        DISTANCE_GRAPPE =  4
+        NB_VAISSEAUX_PAR_ATTAQUE = 4
+        FORCE_ATTAQUE_BASIQUE =20
+        
+        # variables
+        self.parent = parent
         self.etoileMere = 0
         self.base = 0
+        self.nbEtoiles = 0
+        self.listePossessions = [] #initialisation de la liste des Etoiles possedees par les Czins
+        self.listeFlottes = [] #initialisation de la liste de flottes creees par les Czins
+        rassemblement_force = True
+        conquerir_grape = False
+        etablir_base = False
+        positionEtoileBase = [] # va contenir la valeur en X et Y de la position de l'etoile base
 
     def definirValeurGrappe(self, modele):
 
@@ -59,7 +97,15 @@ class Czins:
                 etoile.valeur_base = etoile.valeur_grappe-3 * distance
 
     
-        
+    def choisirGrappe(self):
+        pass
+    
+    def etablirBase(self):
+        pass
+    
+    def forceAttaque(self):
+        pass
+    
 
 #Classe qui represente une flotte de vaisseau(Nb, Destination, etc.)
 class flotteDeVaisseaux:
@@ -103,3 +149,12 @@ class Etoile:
         valeur_grappe = 0 #Nb d'etoiles qui sont a 4 ou moins de distance
         valeur_base = 0 
         
+
+    def genererVaisseau(self):
+        pass
+        
+    def calculerValeurGrappe(self):
+        pass
+    
+    def calculerValeurBase(self):
+        pass
