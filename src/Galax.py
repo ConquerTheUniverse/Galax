@@ -1,22 +1,23 @@
-from Tkinter import *
+from tkinter import *
 import Classes
 import random
 
 class Modele:
     def __init__(self, parent):
         self.parent = parent
+        self.temps_courant = 1
         #Pour une surface de 1000x800 px ou les etoiles sont des cases de 10 x 10 px
         self.surfaceX = 50
         self.surfaceY = 37
         self.nbEtoiles = 0
         self.listeEtoiles = []
+        self.listeFlottes = [] # liste d'objets de type Classes.flotteDeVaisseaux
         self.etoileDepart = None
         self.etoileArrivee = None
         #Creation d'un objet pour chaque faction pour savoir differentes informations sur chacune de celle-ci
         self.humain = Classes.Humains(self)
         self.gubrus = Classes.Gubrus(self)
         self.czin = Classes.Czins(self)
-        self.flottesVaisseaux = [] # liste d'objets de type Classes.flotteDeVaisseaux
         
 
     #Permet de creer toutes les etoiles au debut de la partie
@@ -44,7 +45,7 @@ class Modele:
                 x = random.randint(0, self.surfaceX-1)
                 #Valeur aleatoire en Y pour une etoile
                 y = random.randint(0, self.surfaceY-1)
-                print(i)
+                #print(i)
                 
                     
                 #Assurer que les etoiles ne soit pas directement les unes a cote des autres
@@ -67,27 +68,29 @@ class Modele:
     def assignerLesEtoilesMeres(self):
 
         positionOK = False 
-        n = random.randint(0,len(self.listeEtoiles))
-        print(n)
+        n = random.randint(0,len(self.listeEtoiles)-1)
+        #print(n)
 
         self.listeEtoiles[n].nbVaisseaux = 100
         self.listeEtoiles[n].nbManufactures = 10
         self.listeEtoiles[n].proprietaire = 1
         self.listeEtoiles[n].niveauInfo = 3
-        
+               
         self.humain.etoileMere = n
+        self.humain.listePossessions.append(n)
 
         
 
         while(positionOK == False):
 
-            n = random.randint(0,len(self.listeEtoiles))
+            n = random.randint(0,len(self.listeEtoiles)-1)
             
             if(self.listeEtoiles[n].proprietaire != 1):
                 self.listeEtoiles[n].proprietaire = 2
                 self.listeEtoiles[n].nbVaisseaux = 100
                 self.listeEtoiles[n].nbManufactures = 10
                 self.gubrus.etoileMere = n
+                self.gubrus.listePossessions.append(n)
                 positionOK=True
                 
             
@@ -95,7 +98,7 @@ class Modele:
         
         while(positionOK == False):
 
-            n = random.randint(0,len(self.listeEtoiles))
+            n = random.randint(0,len(self.listeEtoiles)-1)
         
             if(self.listeEtoiles[n].proprietaire != 1 and self.listeEtoiles[n].proprietaire != 2):
                 self.listeEtoiles[n].proprietaire = 3
@@ -103,6 +106,7 @@ class Modele:
                 self.listeEtoiles[n].nbManufactures = 10
                 self.czin.base = n
                 self.czin.etoileMere = n
+                self.czin.listePossessions.append(n)
                 positionOK=True
                 
         
@@ -143,6 +147,7 @@ class Vue:
         #Elements du menu
         self.backgroundMenu = Label(self.root, image=self.backgroundMenu)
         self.boutonJouer = Button(self.root, text='Jouer',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
+        self.boutonInstructions = Button(self.root, text='Instructions', width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
         self.boutonQuitter = Button(self.root, text='Quitter',width=50, bg='black', fg='white',activebackground='black', activeforeground='white', command=self.root.destroy)
         
         #Widgets pour l'affichage du jeu
@@ -150,9 +155,15 @@ class Vue:
         self.labelHumains = Label(self.root, text="Humains : 1", font=("Arial",16))
         self.labelGubrus = Label(self.root, text="Gubrus : 1", font=("Arial",16))
         self.labelCzins = Label(self.root, text="Czins : 1", font=("Arial",16))
+        self.boutonEnvoyerFlotte = Button(self.root, text='Envoyer Une Flotte',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
         self.boutonChangerAnnee = Button(self.root, text='Annee Suivante',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
         self.choisirNbVaisseaux = Scale(self.root, orient=HORIZONTAL, length=300)
 
+        #Label pour l'affichage des informations
+        self.labelNbVaisseaux = Label(self.root, font=("Arial", 16))
+        self.labelNiveauInfo = Label(self.root, font=("Arial", 16))
+        self.labelNbManufactures = Label(self.root, font=("Arial", 16))
+        
 
         #Label contenant les images pour le panel sur le cote
         self.imageTempH = self.imageHumains.zoom(1,1)
@@ -178,8 +189,11 @@ class Vue:
 
         self.parent.transmissionMouseClick(event.x, event.y)
 
+    #Obtenir les informations d'une planete lors d'un right click
     def getRightClick(self, event):
-        pass
+
+        print(event.x, event.y)
+        self.parent.obtenirInfoEtoile(event.x, event.y)
         
 
     #Afficher le menu principal
@@ -199,7 +213,7 @@ class Vue:
         #Place la surface de jeu
         self.surfaceJeu.place(x=0,y=0)
 
-        #Boucle pour afficher chacune des etoiles
+        #Boucle pour afficher cahcune des etoiles
         for y in range(0, modele.surfaceY):
             for x in range(0, modele.surfaceX):
                 for etoile in modele.listeEtoiles:                  
@@ -239,7 +253,7 @@ class Vue:
         self.surfaceJeu.delete("logo")
         
         for etoile in modele.listeEtoiles:
-            print(etoile.proprietaire)
+            #print(etoile.proprietaire)
             
             if(etoile.proprietaire == 1):
                 self.imageHumains = self.imageHumains.subsample(3,3)
@@ -262,11 +276,20 @@ class Controleur:
     def __init__(self):
         self.modele = Modele(self)
         self.vue = Vue(self)
+        #Creation des etoiles
         self.modele.creerEtoiles()
+        #Creation de valeur_grappe et valeur_base pour chaque etoile
+        self.modele.czin.definirValeurGrappe(self.modele)
+        self.modele.czin.definirValeurBase(self.modele)
+        #Assignation des etoiles meres
         self.modele.assignerLesEtoilesMeres()
+        #Affichage Initial du jeu
         self.vue.afficherJeu(self.modele)
+        #Affichage des proprietaires sur les etoiles
         self.vue.afficherProprietaire(self.modele)
+        #Booleen pour gerer le mouseclick lors de la selection d'une etoile
         self.etoileClique = False
+        #Booleen pour ne pas essayer d'envoyer une Arma une deuxieme fois
         self.vue.root.mainloop()
 
     
@@ -274,6 +297,7 @@ class Controleur:
         
         self.vue.surfaceJeu.delete("selection")
         self.vue.choisirNbVaisseaux.place_forget()
+        self.vue.boutonEnvoyerFlotte.place_forget()
 
         print(len(self.modele.listeEtoiles))
         for i in range(0, len(self.modele.listeEtoiles)):
@@ -281,7 +305,7 @@ class Controleur:
             if(self.modele.listeEtoiles[i].posX*20 <= x and self.modele.listeEtoiles[i].posX*20+20 >= x):
                 if(self.modele.listeEtoiles[i].posY*20 <= y and self.modele.listeEtoiles[i].posY*20+20 >= y):
                 
-                    #Si l'etoile de depart n'est pas selectionnee
+                    #Si l'etoile de depart n'est pas selectionné
                     if(self.modele.etoileDepart == None and self.modele.listeEtoiles[i].proprietaire == 1):
                         self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='red', tags="selection")
                         self.modele.etoileDepart = i
@@ -297,23 +321,107 @@ class Controleur:
                             self.vue.choisirNbVaisseaux.config(from_=0, to = self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
                             print(self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
                             self.vue.choisirNbVaisseaux.place(x=50, y=740, width=500)
+                            self.vue.boutonEnvoyerFlotte.place(x=580, y=755, width=150)
                             self.etoileClique = False
                     break
 
                      
-            #Sinon set les etoiles selectionnees a None
+            #Sinon set les etoiles selectionnées a None
             elif(self.etoileClique == False):
                 print("le else")
                 self.modele.etoileDepart = None
                 self.modele.etoileArrivee = None
                 self.etoileClique = True
-                
+
+    def obtenirInfoEtoile(self, x, y):
+
+        self.vue.labelNbVaisseaux.place_forget()
+        self.vue.labelNiveauInfo.place_forget()
+        self.vue.labelNbManufactures.place_forget()
+        
+        #Boucle pour passer chacune des etoiles
+        for etoile in self.modele.listeEtoiles:
+            if(etoile.posX*20 <= x and etoile.posX*20+20 >= x):
+                if(etoile.posY*20 <= y and etoile.posY*20+20 >= y):
+                    if(etoile.niveauInfo == 0):
+                        break
+                    elif(etoile.niveauInfo == 1):
+                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseauxDerniereVisite))
+                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
+                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
+                        self.vue.labelNiveauInfo.place(x=1000, y=230, width=200, height=30)
+                    elif(etoile.niveauInfo == 2):
+                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseauxDerniereVisite))
+                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
+                        self.vue.labelNbManufactures.config(text='Nb Manufactures : ' + str(etoile.nbManufactures))
+                        self.vue.labelNbManufactures.place(x=1000, y=230, width=200, height=30)
+                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
+                        self.vue.labelNiveauInfo.place(x=1000, y=260, width=200, height=30)
+                    elif(etoile.niveauInfo == 3):
+                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseaux))
+                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
+                        self.vue.labelNbManufactures.config(text='Nb Manufactures : ' + str(etoile.nbManufactures))
+                        self.vue.labelNbManufactures.place(x=1000, y=230, width=200, height=30)
+                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
+                        self.vue.labelNiveauInfo.place(x=1000, y=260, width=200, height=30)
+            
+        
     def deroulerTour(self):
-        pass 
+        #Tour des Gubrus
+        if(not self.modele.gubrus.mort):
+            pass
+        
+        #Tour des Czins
+
+        #Si les Czins sont toujours en vie
+        if(not self.modele.czin.mort):
+        
+            #Si les Czins sont en mode rassemblement_force
+            if(self.modele.czin.rassemblement_force):
+
+                #Si les Czins on plusieurs Etoiles
+                if(len(self.modele.czin.listePossession) > 1):
+                
+                    #Pour tous les numeros d'etoile que les Czins possedent
+                    for numero in self.modele.czin.listePossession:
+                        
+                        #Si le nombre de vaisseau sur cette etoile est plus grand que 3
+                        if(self.modele.listeEtoile[numero] > 3):
+                            #Choisir le nombre de vaisseaux a envoyer sur al base soit nbVaisseaux - 3
+                            vaisseauxAEnvoyer = self.modele.listeEtoile[numero].nbVaisseaux - 3
+                            
+                            #Creation de la flotte de Vaisseau
+                            self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[numero], self.modele.listeEtoile[self.modele.czin.base], 3))
+                            self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
+                            
+                            #On enleve les vaisseaux sur l'etoile une fois la flotte creee
+                            self.modele.listeEtoile[numero].nbVaisseaux = self.modele.listeEtoile[numero].nbVaisseaux - vaiseauxAEnvoyer
+           
+                #Si on possede une armada soit 3 x force_attaque
+                if(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux >= self.modele.czin.forceAttaque(self.modele.temps_courant)*3):
+                    #Envoyer l'Armada vers la base prospective
+                    self.modele.listeFlottes.append(flotteDeVaisseaux(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux, self.modele.listeEtoiles[self.modele.czin.base], self.modele.czin.etablirBase(self.modele), 3))
+                    self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
+                    self.modele.czin.rassemblement_force = False
+                    self.modele.czin.etablir_base = True
+                    
+            #Si on est en mode etablir_base
+            if(self.modele.czin.etablir_base):
+                pass
+            
+            #Si on est en mode conquerir_grappe
+            if(self.modele.czin.conquerir_grappe):
+                pass                 
+                            
+                        
+            
+        
     
     def combatVaisseau(self):
         pass
+    
         
+
 if __name__ == "__main__":
     c = Controleur()
     

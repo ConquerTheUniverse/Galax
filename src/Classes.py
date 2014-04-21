@@ -4,24 +4,26 @@ import math
 class Humains:
     def __init__(self, parent):
         self.parent = parent
+        self.mort = False
         self.etoileMere = 0
         self.nbEtoiles = 0
         self.listePossessions = [] #initialisation de la liste des Etoiles possedees par les humains
-        self.listeFlottes = [] #initialisation de la liste de flottes creees par les humains
+        self.listePossessionsFlottes = [] #initialisation de la liste de flottes creees par les humains
 
 #Contiendra toutes les informations relatives aux Gubrus
 class Gubrus:
     def __init__(self, parent):
         # constantes
-        NB_VAISSEAUX_PAR_ATTAQUE = 5
-        FORCE_ATTAQUE_BASIQUE =10
+        self.NB_VAISSEAUX_PAR_ATTAQUE = 5
+        self.FORCE_ATTAQUE_BASIQUE =10
         
         # variables
         self.parent = parent
+        self.mort = False
         self.etoileMere = 0
         self.nbEtoiles = 0
-        self.listePossession = [] 
-        self.listeFlotte = []
+        self.listePossessions = [] 
+        self.listePossessionsFlottes = []
         
     def strategieAttaque(self):
         pass
@@ -38,9 +40,9 @@ class Gubrus:
 class Czins:
     def __init__(self, parent):
         # constantes
-        DISTANCE_GRAPPE =  4
-        NB_VAISSEAUX_PAR_ATTAQUE = 4
-        FORCE_ATTAQUE_BASIQUE =20
+        self.DISTANCE_GRAPPE =  4
+        self.NB_VAISSEAUX_PAR_ATTAQUE = 4
+        self.FORCE_ATTAQUE_BASIQUE =20
         
         # variables
         self.parent = parent
@@ -48,19 +50,19 @@ class Czins:
         self.base = 0
         self.nbEtoiles = 0
         self.listePossessions = [] #initialisation de la liste des Etoiles possedees par les Czins
-        self.listeFlottes = [] #initialisation de la liste de flottes creees par les Czins
-        rassemblement_force = True
-        conquerir_grape = False
-        etablir_base = False
+        self.listePossessionsFlottes = [] #initialisation de la liste de flottes creees par les Czins
+        self.rassemblement_force = True
+        self.conquerir_grappe = False
+        self.etablir_base = False
         positionEtoileBase = [] # va contenir la valeur en X et Y de la position de l'etoile base
 
-    def definirValeurGrappe(self, modele):
+        
 
-        distance_grappe = 4
+    def definirValeurGrappe(self, modele):
         
-        for etoileValeurGrappe in modele.listeEtoile:
+        for etoileValeurGrappe in modele.listeEtoiles:
         
-            for etoileACompter in modele.listeEtoile:
+            for etoileACompter in modele.listeEtoiles:
                 #Si les deux etoiles ne sont pas la meme
                 if(etoileACompter != etoileValeurGrappe):
 
@@ -72,8 +74,8 @@ class Czins:
                     distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
                 
                     #Si la position est au moins a 4 de difference
-                    if(distance <= distance_grappe):
-                        s = distance_grappe - distance + 1
+                    if(distance <= self.DISTANCE_GRAPPE):
+                        s = self.DISTANCE_GRAPPE - distance + 1
                         etoileValeurGrappe.valeur_grappe += s
                     
                         
@@ -81,11 +83,11 @@ class Czins:
 
     def definirValeurBase(self, modele):
         
-        for etoile in modele.listeEtoile:
+        for etoile in modele.listeEtoiles:
 
             #Pour calculer la distance
-            differenceX = abs(etoile.posX - modele.listeEtoile[self.etoileMere].posX)
-            differenceY = abs(etoile.posY - modele.listeEtoile[self.etoileMere].posY)
+            differenceX = abs(etoile.posX - modele.listeEtoiles[self.etoileMere].posX)
+            differenceY = abs(etoile.posY - modele.listeEtoiles[self.etoileMere].posY)
 
             #Calculer la distance a l'aide du theoreme de pythagore
             distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
@@ -97,23 +99,35 @@ class Czins:
                 etoile.valeur_base = etoile.valeur_grappe-3 * distance
 
     
-    def choisirGrappe(self):
-        pass
+    def etablirBase(self, modele):
+        plusGrandeValeur = 0
+        etoileChoix = None
+
+        #Regrade valeur_grappe de chacune des etoiles
+        for etoile in modele.listeEtoiles:
+            #Si la valeur grappe est plus haute que la valeur retenu presentement il faut la changer sinon continuer la boucle
+            if(etoile.valeur_base > plusGrandeValeur and etoile.proprietaire != 3):
+                plusGrandeValeur = etoile.valeur_base
+                etoileChoix = etoile
+
+        print(etoileChoix.valeur_grappe)     
+        return etoileChoix
     
-    def etablirBase(self):
-        pass
     
-    def forceAttaque(self):
-        pass
+    def forceAttaque(self, temps_courant):
+        force_attaque = temps_courant*self.NB_VAISSEAUX_PAR_ATTAQUE*self.FORCE_ATTAQUE_BASIQUE
+        return force_attaque 
     
 
 #Classe qui represente une flotte de vaisseau(Nb, Destination, etc.)
 class flotteDeVaisseaux:
-    def __init__(self, quantiteVaisseaux, destination, proprietaire):
+    def __init__(self, quantiteVaisseaux, depart, destination, proprietaire):
         self.quantiteVaisseaux = quantiteVaisseaux
+        self.depart = depart
         self.destination = destination
-        self.anneeArrivee = 0
+        self.anneeArrivee = self.calculerArrivee(self.depart, self.destination)
         self.proprietaire = proprietaire
+        
         
 
     #Permet de calculer l'annee d'arrivee en fonction de la destination
@@ -146,8 +160,8 @@ class Etoile:
         self.nbVaisseaux = 0 #Nb de vaisseau sur l'etoile
         self.niveauInfo = 0 
         self.nbVaisseuxDerniereVisite = 0 #Nb de vaisseau lors de la derniere visite
-        valeur_grappe = 0 #Nb d'etoiles qui sont a 4 ou moins de distance
-        valeur_base = 0 
+        self.valeur_grappe = 0 #Nb d'etoiles qui sont a 4 ou moins de distance
+        self.valeur_base = 0 
         
 
     def genererVaisseau(self):
