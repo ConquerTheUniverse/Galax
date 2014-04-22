@@ -25,16 +25,27 @@ class Gubrus:
         self.listePossessions = [] 
         self.listePossessionsFlottes = []
         
-    def strategieAttaque(self):
-        pass
+    def strategieAttaque(self, modele):
+        for etoile in modele.listeEtoiles:
+            differenceX = abs(etoile.posX - modele.listeEtoiles[self.etoileMere].posX)
+            differenceY = abs(etoile.posY - modele.listeEtoiles[self.etoileMere].posY)
+                    
     
     
-    def forceAttaque(self):
-        pass
+    def forceAttaque(self, modele, temps_courant):
+        if((temps_courant*self.NB_VAISSEAUX_PAR_ATTAQUE+self.FORCE_ATTAQUE_BASIQUE) > self.FORCE_ATTAQUE_BASIQUE*2):
+            
+            force_attaque = temps_courant*self.NB_VAISSEAUX_PAR_ATTAQUE+self.FORCE_ATTAQUE_BASIQUE
+            return force_attaque
+        else
+            force_attaque = self.FORCE_ATTAQUE_BASIQUE*2
+            return force_attaque
     
     
-    def formationDeFlotte(self):
-        pass
+    def formationDeFlotte(self, modele, temps_courant):
+        if(modele.self.listeFlottes[self.etoileMere] < (self.forceAttaque(modele, temps_courant)+ self.FORCE_ATTAQUE_BASIQUE)):
+            pass
+        else
 
 #Contiendras toutes les informations relatives aux Czins
 class Czins:
