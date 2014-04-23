@@ -379,24 +379,6 @@ class Controleur:
             #Si les Czins sont en mode rassemblement_force
             if(self.modele.czin.rassemblement_force):
 
-                #Si les Czins on plusieurs Etoiles
-                if(len(self.modele.czin.listePossession) > 1):
-                
-                    #Pour tous les numeros d'etoile que les Czins possedent
-                    for numero in self.modele.czin.listePossession:
-                        
-                        #Si le nombre de vaisseau sur cette etoile est plus grand que 3
-                        if(self.modele.listeEtoile[numero] > 3):
-                            #Choisir le nombre de vaisseaux a envoyer sur al base soit nbVaisseaux - 3
-                            vaisseauxAEnvoyer = self.modele.listeEtoile[numero].nbVaisseaux - 3
-                            
-                            #Creation de la flotte de Vaisseau
-                            self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[numero], self.modele.listeEtoile[self.modele.czin.base], 3))
-                            self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
-                            
-                            #On enleve les vaisseaux sur l'etoile une fois la flotte creee
-                            self.modele.listeEtoile[numero].nbVaisseaux = self.modele.listeEtoile[numero].nbVaisseaux - vaiseauxAEnvoyer
-           
                 #Si on possede une armada soit 3 x force_attaque
                 if(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux >= self.modele.czin.forceAttaque(self.modele.temps_courant)*3):
                     #Envoyer l'Armada vers la base prospective
@@ -404,15 +386,78 @@ class Controleur:
                     self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
                     self.modele.czin.rassemblement_force = False
                     self.modele.czin.etablir_base = True
+                
+                #Si les Czins on plusieurs Etoiles
+                elif(len(self.modele.czin.listePossession) > 1):
+
+                    planeteProche = False
                     
-            #Si on est en mode etablir_base
-            if(self.modele.czin.etablir_base):
-                pass
+                    #Pour tous les numeros d'etoile que les Czins possedent
+                    for numero in self.modele.czin.listePossession:
+                        
+                        #Pour calculer la distance
+                        differenceX = abs(self.modele.listeEtoiles[numero].posX - modele.listeEtoiles[sel.modele.czin.base].posX)
+                        differenceY = abs(self.modele.listeEtoiles[numero].posY - modele.listeEtoiles[sel.modele.czin.base].posY)
+
+                        #Calculer la distance a l'aide du theoreme de pythagore
+                        distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
+                        
+                        #Si les etoiles sont a distance rassemblement
+                        if(distance <= 6):
+
+                            planeteProche = True
+                            
+                            #Si le nombre de vaisseau sur cette etoile est plus grand que 3
+                            if(self.modele.listeEtoile[numero] > 3):
+                                
+                                #Choisir le nombre de vaisseaux a envoyer sur la base soit nbVaisseaux - 3
+                                vaisseauxAEnvoyer = self.modele.listeEtoile[numero].nbVaisseaux - 3
+                            
+                                #Creation de la flotte de Vaisseau
+                                self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[numero], self.modele.listeEtoile[self.modele.czin.base], 3))
+                                self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
+                            
+                                #On enleve les vaisseaux sur l'etoile une fois la flotte creee
+                                self.modele.listeEtoile[numero].nbVaisseaux = self.modele.listeEtoile[numero].nbVaisseaux - vaiseauxAEnvoyer
+
+                        #Si il n'y a pas d'etoile a distance rassemblement de la base changer la base pour l'etoile mere
+                        elif(not planeteProche):
+                            self.modele.czin.base = self.modele.czin.etoileMere
+                            
+                
             
             #Si on est en mode conquerir_grappe
             if(self.modele.czin.conquerir_grappe):
-                pass                 
-                            
+
+                etoileABonneDistance = False
+                
+                for etoileAConquerir in self.modele.listeEtoiles:
+
+                    #Pour calculer la distance
+                    differenceX = abs(etoile.posX - modele.listeEtoiles[sel.modele.czin.base].posX)
+                    differenceY = abs(etoile.posY - modele.listeEtoiles[sel.modele.czin.base].posY)
+
+                    #Calculer la distance a l'aide du theoreme de pythagore
+                    distance=math.sqrt(math.pow(differenceX, 2)+math.pow(differenceY, 2))
+
+                    #Si cette toile est a distance grappe 
+                    if(distance <= self.czin.DISTANCE_GRAPPE):
+
+                        #Si il y a une etoile a la bonne distance
+                        etoileABonneDistance = True
+                        
+                        #Si le nombre de vaisseau sur la base est plus grand ou egal a froce_attaque
+                        if(self.modele.listeEtoiles[self.modele.czin.base] >= self.modele.czin.forceAttaque(self.modele.temps_courant)):
+                            self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[self.modele.czin.base], etoileAConquerir, 3))
+                            self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1) 
+
+                        #Sinon on sort de la boucle puisqu'il n'y a pas assez de vaisseaux sur la base
+                        else:
+                            break
+
+                    if(not etoileABonneDistance):
+                        self.modele.czin.rassemblement_force = True
+                        self.modele.czin.conquerir_grappe = False
                         
             
         

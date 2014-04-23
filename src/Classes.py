@@ -121,7 +121,7 @@ class Czins:
                 plusGrandeValeur = etoile.valeur_base
                 etoileChoix = etoile
 
-        print(etoileChoix.valeur_grappe)     
+            
         return etoileChoix
     
     
