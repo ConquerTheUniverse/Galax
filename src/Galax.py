@@ -1,5 +1,6 @@
 from tkinter import *
 import Classes
+import math
 import random
 
 class Modele:
@@ -7,8 +8,8 @@ class Modele:
         self.parent = parent
         self.temps_courant = 1
         #Pour une surface de 1000x800 px ou les etoiles sont des cases de 10 x 10 px
-        self.surfaceX = 50
-        self.surfaceY = 37
+        self.surfaceX = 40
+        self.surfaceY = 20
         self.nbEtoiles = 0
         self.listeEtoiles = []
         self.listeFlottes = [] # liste d'objets de type Classes.flotteDeVaisseaux
@@ -121,6 +122,9 @@ class Vue:
         self.root = Tk()
         self.root.resizable(0,0)
         self.root.title("Galax")
+        self.posXsurface = 0
+        self.posYsurface = 0
+        self.ePx = 60
         self.width = 1200
         self.height = 800
         self.root.geometry(str(self.width)+"x"+str(self.height))
@@ -135,14 +139,15 @@ class Vue:
         self.imagePlanete2 = PhotoImage(file="images/planete2.gif")
         self.imagePlanete3 = PhotoImage(file="images/planete3.gif")
         self.imagePlanete4 = PhotoImage(file="images/planete4.gif")
-        #self.backgroundSurface = PhotoImage(file="images/bgSurface.gif")
+        self.backgroundSurface = PhotoImage(file="images/bgSurface.gif")
         self.backgroundMenu = PhotoImage(file="images/bgMenu.gif")
 
         #Resize des planetes
-        self.imagePlanete1 = self.imagePlanete1.subsample(30,30)
-        self.imagePlanete2 = self.imagePlanete2.subsample(30,30)
-        self.imagePlanete3 = self.imagePlanete3.subsample(30,30)
-        self.imagePlanete4 = self.imagePlanete4.subsample(30,30)
+        self.resizeRatio = int(600/self.ePx)
+        self.imagePlanete1 = self.imagePlanete1.subsample(self.resizeRatio,self.resizeRatio)
+        self.imagePlanete2 = self.imagePlanete2.subsample(self.resizeRatio,self.resizeRatio)
+        self.imagePlanete3 = self.imagePlanete3.subsample(self.resizeRatio,self.resizeRatio)
+        self.imagePlanete4 = self.imagePlanete4.subsample(self.resizeRatio,self.resizeRatio)
 
         #Elements du menu
         self.backgroundMenu = Label(self.root, image=self.backgroundMenu)
@@ -151,19 +156,21 @@ class Vue:
         self.boutonQuitter = Button(self.root, text='Quitter',width=50, bg='black', fg='white',activebackground='black', activeforeground='white', command=self.root.destroy)
         
         #Widgets pour l'affichage du jeu
-        self.surfaceJeu = Canvas(self.root, width=1000, height=740, bg='white', highlightthickness=0)
+        self.surfaceJeu = Canvas(self.root, width=1200, height=600, bg='white', highlightthickness=0)
+        self.surfaceJeu.configure(scrollregion=(0,0,2400,1200))
+        self.surfaceMap = Canvas(self.root, width=240, height=120, bg='black', highlightthickness=0)
         self.labelHumains = Label(self.root, text="Humains : 1", font=("Arial",16))
         self.labelGubrus = Label(self.root, text="Gubrus : 1", font=("Arial",16))
         self.labelCzins = Label(self.root, text="Czins : 1", font=("Arial",16))
-        self.boutonEnvoyerFlotte = Button(self.root, text='Envoyer Une Flotte',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
-        self.boutonChangerAnnee = Button(self.root, text='Annee Suivante',width=50, bg='black', fg='white',activebackground='black', activeforeground='white')
-        self.choisirNbVaisseaux = Scale(self.root, orient=HORIZONTAL, length=300)
+        self.boutonEnvoyerFlotte = Button(self.root, text='Envoyer Une Flotte',width=50, bg='black', fg='white',activebackground='black', activeforeground='white', command=self.parent.envoyerFlotte)
+        self.boutonChangerAnnee = Button(self.root, text='Annee Suivante',width=50, bg='black', fg='white',activebackground='black', activeforeground='white', command=self.parent.deroulerTour)
+        self.choisirNbVaisseaux = Scale(self.root, orient=HORIZONTAL, width=50)
+        self.labelAnnee = Label(self.root, text="Annee : 1", font=("Arial",16))
 
-        #Label pour l'affichage des informations
-        self.labelNbVaisseaux = Label(self.root, font=("Arial", 16))
-        self.labelNiveauInfo = Label(self.root, font=("Arial", 16))
-        self.labelNbManufactures = Label(self.root, font=("Arial", 16))
-        
+        #Text
+        self.info = Text(self.root, bg='black', fg='white')
+        self.info.see(END)
+            
 
         #Label contenant les images pour le panel sur le cote
         self.imageTempH = self.imageHumains.zoom(1,1)
@@ -179,18 +186,34 @@ class Vue:
         self.imageTempC = self.imageTempC.subsample(2,2)
         self.logoCzins = Label(self.root, image=self.imageTempC)
 
-        #Keybinds
-        self.surfaceJeu.bind('<Button-1>', self.getLeftClick)
-        self.surfaceJeu.bind('<Button-3>', self.getRightClick)
+        #Pour faire un lien deux planetes pour envoyer des flottes
+        self.surfaceJeu.bind("<ButtonPress-3>", self.getRightClick)
+
+        #Double click pour les infos sur la planete
+        self.surfaceJeu.bind("<Double-Button-1>", self.getDoubleClick)
+        
+        #Pour que le canvas scroll lorsquon click
+        self.surfaceJeu.bind("<ButtonPress-1>", self.scroll_start)
+        self.surfaceJeu.bind("<B1-Motion>", self.scroll_move)
+     
+    def scroll_start(self, event):
+        self.surfaceJeu.scan_mark(event.x, event.y)
+        
+    
+    def scroll_move(self, event):
+        self.surfaceJeu.scan_dragto(event.x, event.y, gain=1)
+        print(self.surfaceJeu.canvasx(0), self.surfaceJeu.canvasy(0))
+        self.surfaceMap.delete("camera")
+        self.surfaceMap.create_rectangle(math.floor(self.surfaceJeu.canvasx(0)/60)*6, math.floor(self.surfaceJeu.canvasy(0)/60)*6, (math.floor(self.surfaceJeu.canvasx(0)/60)*6+120), (math.floor(self.surfaceJeu.canvasy(0)/60)*6+60), outline='red', tags="camera")
+        
         
         
     #Obtenir le click de souris sur la surface   
-    def getLeftClick(self, event):
-
+    def getRightClick(self, event):
         self.parent.transmissionMouseClick(event.x, event.y)
 
     #Obtenir les informations d'une planete lors d'un right click
-    def getRightClick(self, event):
+    def getDoubleClick(self, event):
 
         print(event.x, event.y)
         self.parent.obtenirInfoEtoile(event.x, event.y)
@@ -211,9 +234,13 @@ class Vue:
     #Affichage de la surface de jeu dans la fenetre
     def afficherJeu(self, modele):
         #Place la surface de jeu
-        self.surfaceJeu.place(x=0,y=0)
+        self.surfaceJeu.place(x=0,y=25)
+        self.surfaceMap.place(x=935, y=640)
+        self.surfaceJeu.create_image(0, 0, anchor=NW, image=self.backgroundSurface)
+        
+        
 
-        #Boucle pour afficher cahcune des etoiles
+        #Boucle pour afficher cahcune des etoiles sur la surface
         for y in range(0, modele.surfaceY):
             for x in range(0, modele.surfaceX):
                 for etoile in modele.listeEtoiles:                  
@@ -229,22 +256,37 @@ class Vue:
                         elif(n == 4):
                             randomImage = self.imagePlanete4
 
-                        self.surfaceJeu.create_image(x*20,y*20,anchor=NW, image=randomImage, tags="planete")
+                        if(etoile.proprietaire == 0):
+                            couleur = 'white'
+                        elif(etoile.proprietaire == 1):
+                            couleur = 'blue'
+                        elif(etoile.proprietaire == 2):
+                            couleur = 'yellow'
+                        elif(etoile.proprietaire == 3):
+                            couleur = 'red'
+                            
+                        self.surfaceJeu.create_image(x*self.ePx,y*self.ePx,anchor=NW, image=randomImage, tags="planete")
+                        self.surfaceMap.create_rectangle(x*6,y*6, (x*6)+6, (y*6)+6, fill=couleur)
+                        self.surfaceMap.create_rectangle(0, 0, 120, 60, outline='red', tags="camera")
                         break #Pour sortir du for interne puisqu'il ne peut pas y avoir deux etoiels a la meme position
                         
 
+        
         #Place les item qui seront sur le coter de la surface
-        self.logoHumains.place(x=1000)
-        self.labelHumains.place(x=1030, width=170, height=30)
+        self.logoHumains.place(x=330, y=660)
+        self.labelHumains.place(x=360, y=660, width=170, height=30)
 
-        self.logoGubrus.place(x=1000, y=30)
-        self.labelGubrus.place(x=1030, y=30, width=170, height=30)
+        self.logoGubrus.place(x=330, y=690)
+        self.labelGubrus.place(x=360, y=690, width=170, height=30)
 
-        self.logoCzins.place(x=1000, y=60)
-        self.labelCzins.place(x=1030, y=60, width=170, height=30)
+        self.logoCzins.place(x=330, y=720)
+        self.labelCzins.place(x=360, y=720, width=170, height=30)
 
+        self.info.place(x=550, y=640, width=370, height=120)
+        
         #Place le bouton pour changer d'annee
-        self.boutonChangerAnnee.place(x=1025, y=750, width=150)
+        self.labelAnnee.place(x=680, y=760)
+        self.boutonChangerAnnee.place(x=980, y=765, width=150)
 
 
     #Affiche les proprietaires sur les planetes
@@ -256,14 +298,11 @@ class Vue:
             #print(etoile.proprietaire)
             
             if(etoile.proprietaire == 1):
-                self.imageHumains = self.imageHumains.subsample(3,3)
-                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageHumains, tags="logo")
+                self.surfaceJeu.create_image(etoile.posX*self.ePx, etoile.posY*self.ePx, anchor=NW, image=self.imageHumains, tags="logo")
             elif(etoile.proprietaire == 2):
-                self.imageGubrus = self.imageGubrus.subsample(3,3)
-                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageGubrus, tags="logo")
+                self.surfaceJeu.create_image(etoile.posX*self.ePx, etoile.posY*self.ePx, anchor=NW, image=self.imageGubrus, tags="logo")
             elif(etoile.proprietaire == 3):
-                self.imageCzins = self.imageCzins.subsample(3,3)
-                self.surfaceJeu.create_image(etoile.posX*20, etoile.posY*20, anchor=NW, image=self.imageCzins, tags="logo")
+                self.surfaceJeu.create_image(etoile.posX*self.ePx, etoile.posY*self.ePx, anchor=NW, image=self.imageCzins, tags="logo")
 
     #Affiche les informations de la planete selectione
     def afficherInformations(self):
@@ -302,26 +341,28 @@ class Controleur:
         print(len(self.modele.listeEtoiles))
         for i in range(0, len(self.modele.listeEtoiles)):
 
-            if(self.modele.listeEtoiles[i].posX*20 <= x and self.modele.listeEtoiles[i].posX*20+20 >= x):
-                if(self.modele.listeEtoiles[i].posY*20 <= y and self.modele.listeEtoiles[i].posY*20+20 >= y):
-                
+            
+
+            if(self.modele.listeEtoiles[i].posX*60 <= self.vue.surfaceJeu.canvasx(x) and self.modele.listeEtoiles[i].posX*60+60 >= self.vue.surfaceJeu.canvasx(x)):
+                if(self.modele.listeEtoiles[i].posY*60 <= self.vue.surfaceJeu.canvasy(y) and self.modele.listeEtoiles[i].posY*60+60 >= self.vue.surfaceJeu.canvasy(y)):
+
                     #Si l'etoile de depart n'est pas selectionné
                     if(self.modele.etoileDepart == None and self.modele.listeEtoiles[i].proprietaire == 1):
-                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='red', tags="selection")
+                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*self.vue.ePx-10, self.modele.listeEtoiles[i].posY*self.vue.ePx-10, self.modele.listeEtoiles[i].posX*self.vue.ePx+70, self.modele.listeEtoiles[i].posY*self.vue.ePx+70, dash=(4,4), outline='red', tags="selection")
                         self.modele.etoileDepart = i
                         self.etoileClique = True
                         print("trouve")
                         
                     elif(self.modele.etoileDepart != None):
-                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20-10, self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+30, self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+30, dash=(4,4), outline='red', tags="selection")
+                        self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[self.modele.etoileDepart].posX*self.vue.ePx-10, self.modele.listeEtoiles[self.modele.etoileDepart].posY*self.vue.ePx-10, self.modele.listeEtoiles[self.modele.etoileDepart].posX*self.vue.ePx+70, self.modele.listeEtoiles[self.modele.etoileDepart].posY*self.vue.ePx+70, dash=(4,4), outline='red', tags="selection")
                         if(i != self.modele.etoileDepart):
                             self.modele.etoileArrivee = i
-                            self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*20-10, self.modele.listeEtoiles[i].posY*20-10, self.modele.listeEtoiles[i].posX*20+30, self.modele.listeEtoiles[i].posY*20+30, dash=(4,4), outline='green', tags="selection")
-                            self.vue.surfaceJeu.create_line(self.modele.listeEtoiles[self.modele.etoileDepart].posX*20+10,self.modele.listeEtoiles[self.modele.etoileDepart].posY*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posX*20+10, self.modele.listeEtoiles[self.modele.etoileArrivee].posY*20+10, fill='blue', tags="selection")
+                            self.vue.surfaceJeu.create_oval(self.modele.listeEtoiles[i].posX*self.vue.ePx-10, self.modele.listeEtoiles[i].posY*self.vue.ePx-10, self.modele.listeEtoiles[i].posX*self.vue.ePx+70, self.modele.listeEtoiles[i].posY*self.vue.ePx+70, dash=(4,4), outline='green', tags="selection")
+                            self.vue.surfaceJeu.create_line(self.modele.listeEtoiles[self.modele.etoileDepart].posX*self.vue.ePx+30,self.modele.listeEtoiles[self.modele.etoileDepart].posY*self.vue.ePx+30, self.modele.listeEtoiles[self.modele.etoileArrivee].posX*self.vue.ePx+30, self.modele.listeEtoiles[self.modele.etoileArrivee].posY*self.vue.ePx+30, fill='blue', tags="selection")
                             self.vue.choisirNbVaisseaux.config(from_=0, to = self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
                             print(self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux)
-                            self.vue.choisirNbVaisseaux.place(x=50, y=740, width=500)
-                            self.vue.boutonEnvoyerFlotte.place(x=580, y=755, width=150)
+                            self.vue.choisirNbVaisseaux.place(x=25, y=650, width=300)
+                            self.vue.boutonEnvoyerFlotte.place(x=100, y=725, width=150, height=50)
                             self.etoileClique = False
                     break
 
@@ -335,43 +376,41 @@ class Controleur:
 
     def obtenirInfoEtoile(self, x, y):
 
-        self.vue.labelNbVaisseaux.place_forget()
-        self.vue.labelNiveauInfo.place_forget()
-        self.vue.labelNbManufactures.place_forget()
+        self.vue.surfaceJeu.delete("info")
         
         #Boucle pour passer chacune des etoiles
         for etoile in self.modele.listeEtoiles:
-            if(etoile.posX*20 <= x and etoile.posX*20+20 >= x):
-                if(etoile.posY*20 <= y and etoile.posY*20+20 >= y):
+            if(etoile.posX*60 <= self.vue.surfaceJeu.canvasx(x) and etoile.posX*60+60 >= self.vue.surfaceJeu.canvasx(x)):
+                if(etoile.posY*60 <= self.vue.surfaceJeu.canvasy(y) and etoile.posY*60+60 >= self.vue.surfaceJeu.canvasy(y)):
+                    
+                    if(etoile.posX >= 37):
+                        offset = -145
+                    else:
+                        offset = 60
+
                     if(etoile.niveauInfo == 0):
                         break
                     elif(etoile.niveauInfo == 1):
-                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseauxDerniereVisite))
-                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
-                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
-                        self.vue.labelNiveauInfo.place(x=1000, y=230, width=200, height=30)
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+10, text='Nb Vaisseaux : '+ str(etoile.nbVaisseauxDerniereVisite), font=('Arial', 12), fill='white', tags="info")
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+50, text='Niveau Info : '+ str(etoile.niveauInfo), font=('Arial', 12), fill='white', tags="info")
                     elif(etoile.niveauInfo == 2):
-                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseauxDerniereVisite))
-                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
-                        self.vue.labelNbManufactures.config(text='Nb Manufactures : ' + str(etoile.nbManufactures))
-                        self.vue.labelNbManufactures.place(x=1000, y=230, width=200, height=30)
-                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
-                        self.vue.labelNiveauInfo.place(x=1000, y=260, width=200, height=30)
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+10, text='Nb Vaisseaux : '+ str(etoile.nbVaisseauxDerniereVisite), font=('Arial', 12), fill='white', tags="info")
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+30, text='Nb Manufactures : '+ str(etoile.nbManufactures), font=('Arial', 12), fill='white', tags="info") 
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+50, text='Niveau Info : '+ str(etoile.niveauInfo), font=('Arial', 12), fill='white', tags="info")
                     elif(etoile.niveauInfo == 3):
-                        self.vue.labelNbVaisseaux.config(text='Nb Vaisseaux : ' + str(etoile.nbVaisseaux))
-                        self.vue.labelNbVaisseaux.place(x=1000, y=200, width=200, height=30)
-                        self.vue.labelNbManufactures.config(text='Nb Manufactures : ' + str(etoile.nbManufactures))
-                        self.vue.labelNbManufactures.place(x=1000, y=230, width=200, height=30)
-                        self.vue.labelNiveauInfo.config(text="Niveau d'info : " + str(etoile.niveauInfo))
-                        self.vue.labelNiveauInfo.place(x=1000, y=260, width=200, height=30)
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+10, anchor=W, text='Nb Vaisseaux : '+ str(etoile.nbVaisseaux), font=('Arial', 12), fill='white', tags="info")
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+30, anchor=W, text='Nb Manufactures : '+ str(etoile.nbManufactures), font=('Arial', 12), fill='white', tags="info") 
+                        self.vue.surfaceJeu.create_text((etoile.posX*60)+offset, (etoile.posY*60)+50, anchor=W, text='Niveau Info : '+ str(etoile.niveauInfo), font=('Arial', 12), fill='white', tags="info")
+                        
             
         
     def deroulerTour(self):
         #Tour des Gubrus
         if(not self.modele.gubrus.mort):
-            pass
+            #Envoyer flottes vers planete la plus proche
+            self.modele.gubrus.listeFlottes.append(Classes.flotteDeVaisseaux(self.modele.listeEtoiles[self.modele.gubrus.etoileMere].nbVaisseaux,self.modele.listeEtoiles[self.modele.gubrus.etoileMere],self.modele.gubrus.strategieAttaque(self.modele),2,self.modele.temps_courant))
         
-        #Tour des Czins
+        #Tour des Czin
 
         #Si les Czins sont toujours en vie
         if(not self.modele.czin.mort):
@@ -382,13 +421,14 @@ class Controleur:
                 #Si on possede une armada soit 3 x force_attaque
                 if(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux >= self.modele.czin.forceAttaque(self.modele.temps_courant)*3):
                     #Envoyer l'Armada vers la base prospective
-                    self.modele.listeFlottes.append(flotteDeVaisseaux(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux, self.modele.listeEtoiles[self.modele.czin.base], self.modele.czin.etablirBase(self.modele), 3))
+                    self.modele.listeFlottes.append(Classes.flotteDeVaisseaux(self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux, self.modele.listeEtoiles[self.modele.czin.base], self.modele.czin.etablirBase(self.modele), 3, self.modele.temps_courant))
+                    self.self.modele.listeEtoiles[self.modele.czin.base].nbVaisseaux = 0
                     self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
                     self.modele.czin.rassemblement_force = False
                     self.modele.czin.etablir_base = True
                 
                 #Si les Czins on plusieurs Etoiles
-                elif(len(self.modele.czin.listePossession) > 1):
+                elif(len(self.modele.czin.listePossessions) > 1):
 
                     planeteProche = False
                     
@@ -414,15 +454,17 @@ class Controleur:
                                 vaisseauxAEnvoyer = self.modele.listeEtoile[numero].nbVaisseaux - 3
                             
                                 #Creation de la flotte de Vaisseau
-                                self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[numero], self.modele.listeEtoile[self.modele.czin.base], 3))
+                                self.modele.listeFlottes.append(Classes.flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[numero], self.modele.listeEtoile[self.modele.czin.base], 3, self.modele.temps_courant))
+                                self.modele.listeEtoile[numero].nbVaisseaux -= vaisseauxAEnvoyer
+                                self.modele.listeFlottes[len(self.modele.listeFlottes)-1].armada = True
                                 self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
                             
                                 #On enleve les vaisseaux sur l'etoile une fois la flotte creee
                                 self.modele.listeEtoile[numero].nbVaisseaux = self.modele.listeEtoile[numero].nbVaisseaux - vaiseauxAEnvoyer
 
-                        #Si il n'y a pas d'etoile a distance rassemblement de la base changer la base pour l'etoile mere
-                        elif(not planeteProche):
-                            self.modele.czin.base = self.modele.czin.etoileMere
+                    #Si il n'y a pas d'etoile a distance rassemblement de la base changer la base pour l'etoile mere
+                    if(not planeteProche):
+                        self.modele.czin.base = self.modele.czin.etoileMere
                             
                 
             
@@ -448,8 +490,10 @@ class Controleur:
                         
                         #Si le nombre de vaisseau sur la base est plus grand ou egal a froce_attaque
                         if(self.modele.listeEtoiles[self.modele.czin.base] >= self.modele.czin.forceAttaque(self.modele.temps_courant)):
-                            self.modele.listeFlottes.append(flotteDeVaisseaux(vaisseauxAEnvoyer, self.modele.listeEtoile[self.modele.czin.base], etoileAConquerir, 3))
-                            self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1) 
+                            self.modele.listeFlottes.append(Classes.flotteDeVaisseaux(self.modele.czin.forceAttaque(self.modele.temps_courant), self.modele.listeEtoile[self.modele.czin.base], etoileAConquerir, 3, self.modele.listeEtoiles.index(etoileAConquerir), self.modele.temps_courant))
+                            self.modele.listeEtoile[self.modele.czin.base].nbVaisseaux -= self.modele.czin.forceAttaque(self.modele.temps_courant)
+                            self.modele.czin.listePossessionsFlottes.append(len(self.modele.listeFlottes)-1)
+                            
 
                         #Sinon on sort de la boucle puisqu'il n'y a pas assez de vaisseaux sur la base
                         else:
@@ -459,11 +503,116 @@ class Controleur:
                         self.modele.czin.rassemblement_force = True
                         self.modele.czin.conquerir_grappe = False
                         
+            #Evaluer chaque dixieme d'annee
+            for i in range(0,10):
+
+                #Pour chaque flotte Czin   
+                for flotte in self.modele.czin.listeFlottes:
+                    #Si la flotte est arrivee a destination
+                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                        print("Une flotte Humaine est arrivee!")
+                        #Si la planete est ennemi
+                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+                        
+                        if(flotte.armada):
+                            self.modele.czin.etablir_base = False
+                            self.modele.czin.conquerir_grappe = True
+
+                #Pour chaque flotte Humaine 
+                for flotte in self.modele.humain.listeFlottes:
+                    #Si la flotte est arrivee a destination
+                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                        print("Une flotte Czin est arrivee!")
+                        #Si la planete est ennemi
+                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+
+                #Pour chaque flotte Gubrus  
+                for flotte in self.modele.gubrus.listeFlottes:
+                    #Si la flotte est arrivee a destination
+                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                        print("Une flotte Gubru est arrivee!")
+                        #Si la planete est ennemi
+                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+                
+
+            #Generer des vaisseaux
+            for etoile in self.modele.listeEtoiles:
+                etoile.genererVaisseau()
+
+            #Update les informations
+            self.modele.temps_courant += 1
+            self.vue.labelAnnee.config(text="Annee : "+str(self.modele.temps_courant))
             
         
     
-    def combatVaisseau(self):
-        pass
+    def combatVaisseau(self, nbVaisseauxAttaquant, nbVaisseauxDefendant):
+        tourAttaque = False # verifier si c'est au tour de l'attaquant d'attaquer
+        if(nbVaisseauxAttaquant < nbVaisseauxDefendant):
+            # Possible attaque surprise
+            # 1-calculer ratio r : 
+            r = round((nbVaisseauxDefendant /nbVaisseauxAttaquant))
+            print("ratio r : " + str(r))
+            pourcentageSurprise = 0
+            # 2-determiner pourcentageSurprise :
+            if(r < 5):
+                pourcentageSurprise = round(r/10, 2)
+            elif(r < 20):
+                pourcentageSurprise = round(((3*r + 35) /100), 2)
+            else : pourcentageSurprise = 0.95
+            
+            print("pourcentage : " + str(pourcentageSurprise))
+            
+            
+            if(random.randrange(100) < pourcentageSurprise):
+                tourAttaque = True # situation d'une attaque surprise
+        
+        while(nbVaisseauxAttaquant > 0 and nbVaisseauxDefendant > 0):
+            if(tourAttaque): # l'attaquant attaque 
+                pourcentage = 50
+                nbTemp = 0
+                for i in range(0,nbVaisseauxDefendant):
+                    if(random.randrange(100) < pourcentage):
+                        nbTemp = nbTemp+1
+                nbVaisseauxDefendant = nbVaisseauxDefendant-nbTemp
+                print("nbVaisseauxDefendant : " + str(nbVaisseauxDefendant))
+                tourAttaque = False
+            
+            else : # le defenseur attaque
+                pourcentage = 70
+                nbTemp = 0
+                for i in range(0,nbVaisseauxAttaquant):
+                    if(random.randrange(100) < pourcentage):
+                        nbTemp = nbTemp+1
+                nbVaisseauxAttaquant = nbVaisseauxAttaquant-nbTemp
+                print("nbVaisseauxAttaquant : " + str(nbVaisseauxAttaquant))
+                tourAttaque = True    
+                
+                
+        if(nbVaisseauxDefendant == 0): #attaquants gagnent
+            print("Attaquant gagne")
+            print("Nombre de vaisseaux attaquants restants : " + str(nbVaisseauxAttaquant))
+            return True
+            #1-enlever l'etoile de la liste de la civilisation defendante
+            #2-ajouter l'etoile de la liste de la civilisation attaquante
+            #3-actualiser le nombre de vaisseaux sur l'etoile qui change de proprietaire
+               
+        else:# (nbVaisseauxAttaquant == 0) et donc defendants gagnent
+            print("Defendant gagne")
+            print("Nombre de vaisseaux defendants restants : " + str(nbVaisseauxDefendant))
+            return False
+            #1- eliminer la flotte attaquante de la liste
+            #2-actualiser le nombre de vaisseaux sur l'etoile defendante
+
+    def envoyerFlotte(self):
+        if(self.vue.choisirNbVaisseaux.get() > 0):
+            self.modele.humain.listeFlottes.append(Classes.flotteDeVaisseaux(self.vue.choisirNbVaisseaux.get(), self.modele.listeEtoiles[self.modele.etoileDepart], self.modele.listeEtoiles[self.modele.etoileArrivee], 1, self.modele.temps_courant))
+            self.modele.listeEtoiles[self.modele.etoileDepart].nbVaisseaux -= self.vue.choisirNbVaisseaux.get()
+            etoileDepart = None
+            etoileDepart = None
+            self.vue.surfaceJeu.delete("selection")
+            self.vue.choisirNbVaisseaux.set(0)
+            self.vue.choisirNbVaisseaux.place_forget()
+            self.vue.boutonEnvoyerFlotte.place_forget()
     
         
 
