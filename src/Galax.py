@@ -256,20 +256,10 @@ class Vue:
                         elif(n == 4):
                             randomImage = self.imagePlanete4
 
-                        if(etoile.proprietaire == 0):
-                            couleur = 'white'
-                        elif(etoile.proprietaire == 1):
-                            couleur = 'blue'
-                        elif(etoile.proprietaire == 2):
-                            couleur = 'yellow'
-                        elif(etoile.proprietaire == 3):
-                            couleur = 'red'
-                            
                         self.surfaceJeu.create_image(x*self.ePx,y*self.ePx,anchor=NW, image=randomImage, tags="planete")
-                        self.surfaceMap.create_rectangle(x*6,y*6, (x*6)+6, (y*6)+6, fill=couleur)
                         self.surfaceMap.create_rectangle(0, 0, 120, 60, outline='red', tags="camera")
                         break #Pour sortir du for interne puisqu'il ne peut pas y avoir deux etoiels a la meme position
-                        
+
 
         
         #Place les item qui seront sur le coter de la surface
@@ -289,6 +279,25 @@ class Vue:
         self.boutonChangerAnnee.place(x=980, y=765, width=150)
 
 
+    #Afficher map
+    def afficherMap(self, modele):
+        for y in range(0, modele.surfaceY):
+            for x in range(0, modele.surfaceX):
+                for etoile in modele.listeEtoiles:
+                    if(x == etoile.posX and y == etoile.posY):
+                        if(etoile.proprietaire == 0):
+                            couleur = 'white'
+                        elif(etoile.proprietaire == 1):
+                            couleur = 'blue'
+                        elif(etoile.proprietaire == 2):
+                            couleur = 'yellow'
+                        elif(etoile.proprietaire == 3):
+                            couleur = 'red'
+                            
+        
+                        self.surfaceMap.create_rectangle(x*6,y*6, (x*6)+6, (y*6)+6, fill=couleur)
+                        break #Pour sortir du for interne puisqu'il ne peut pas y avoir deux etoiels a la meme position
+    
     #Affiche les proprietaires sur les planetes
     def afficherProprietaire(self, modele):
         
@@ -324,6 +333,7 @@ class Controleur:
         self.modele.assignerLesEtoilesMeres()
         #Affichage Initial du jeu
         self.vue.afficherJeu(self.modele)
+        self.vue.afficherMap(self.modele)
         #Affichage des proprietaires sur les etoiles
         self.vue.afficherProprietaire(self.modele)
         #Booleen pour gerer le mouseclick lors de la selection d'une etoile
@@ -434,6 +444,7 @@ class Controleur:
                     
                     #Pour tous les numeros d'etoile que les Czins possedent
                     for numero in self.modele.czin.listePossession:
+                        print("infinie")
                         
                         #Pour calculer la distance
                         differenceX = abs(self.modele.listeEtoiles[numero].posX - modele.listeEtoiles[sel.modele.czin.base].posX)
@@ -503,54 +514,63 @@ class Controleur:
                         self.modele.czin.rassemblement_force = True
                         self.modele.czin.conquerir_grappe = False
                         
-            #Evaluer chaque dixieme d'annee
-            for i in range(0,10):
+        #Evaluer chaque dixieme d'annee
+        for i in range(0,10):
 
-                #Pour chaque flotte Czin   
-                for flotte in self.modele.czin.listeFlottes:
-                    #Si la flotte est arrivee a destination
-                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
-                        print("Une flotte Humaine est arrivee!")
-                        #Si la planete est ennemi
-                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+            #Pour chaque flotte Czin   
+            for flotte in self.modele.czin.listeFlottes:
+                #Si la flotte est arrivee a destination
+                if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                    print("Une flotte Czin est arrivee!")
+                    #Si la planete est ennemi
+                    self.combatVaisseau(flotte, flotte.destination)
                         
-                        if(flotte.armada):
-                            self.modele.czin.etablir_base = False
-                            self.modele.czin.conquerir_grappe = True
+                    if(flotte.armada):
+                        self.modele.czin.etablir_base = False
+                        self.modele.czin.conquerir_grappe = True
 
-                #Pour chaque flotte Humaine 
-                for flotte in self.modele.humain.listeFlottes:
-                    #Si la flotte est arrivee a destination
-                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
-                        print("Une flotte Czin est arrivee!")
-                        #Si la planete est ennemi
-                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+            #Pour chaque flotte Humaine 
+            for flotte in self.modele.humain.listeFlottes:
+                #Si la flotte est arrivee a destination
+                if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                    print("Une flotte Humaine est arrivee!")
+                    #Si la planete est ennemi
+                    self.combatVaisseau(flotte, flotte.destination)
 
-                #Pour chaque flotte Gubrus  
-                for flotte in self.modele.gubrus.listeFlottes:
-                    #Si la flotte est arrivee a destination
-                    if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
-                        print("Une flotte Gubru est arrivee!")
-                        #Si la planete est ennemi
-                        #self.combatVaisseau(flotte.nbVaisseaux, self.modele.listeEtoiles[flotte.numeroEtoileDestination])
+            #Pour chaque flotte Gubrus  
+            for flotte in self.modele.gubrus.listeFlottes:
+                #Si la flotte est arrivee a destination
+                if(round(flotte.anneeArrivee, 1) == self.modele.temps_courant+(i/10)):
+                    print("Une flotte Gubru est arrivee!")
+                    #Si la planete est ennemi
+                    self.combatVaisseau(flotte, flotte.destination)
                 
 
-            #Generer des vaisseaux
-            for etoile in self.modele.listeEtoiles:
-                etoile.genererVaisseau()
+        #Generer des vaisseaux
+        for etoile in self.modele.listeEtoiles:
+            etoile.genererVaisseau()
+            print(etoile.nbVaisseaux)
 
-            #Update les informations
-            self.modele.temps_courant += 1
-            self.vue.labelAnnee.config(text="Annee : "+str(self.modele.temps_courant))
+        #Update les informations
+        self.vue.choisirNbVaisseaux.place_forget()
+        self.vue.boutonEnvoyerFlotte.place_forget()
+        self.vue.surfaceJeu.delete("selection")
+        self.vue.surfaceJeu.delete("info")
+        self.modele.temps_courant += 1
+        self.vue.labelAnnee.config(text="Annee : "+str(self.modele.temps_courant))
+
+        #Update les logo ainsi que la map
+        self.vue.afficherProprietaire(self.modele)
+        self.vue.afficherMap(self.modele)
             
         
     
-    def combatVaisseau(self, nbVaisseauxAttaquant, nbVaisseauxDefendant):
+    def combatVaisseau(self, flotteAttaquante, etoileDefendante):
         tourAttaque = False # verifier si c'est au tour de l'attaquant d'attaquer
-        if(nbVaisseauxAttaquant < nbVaisseauxDefendant):
+        if(flotteAttaquante.quantiteVaisseaux < etoileDefendante.nbVaisseaux):
             # Possible attaque surprise
             # 1-calculer ratio r : 
-            r = round((nbVaisseauxDefendant /nbVaisseauxAttaquant))
+            r = round((etoileDefendante.nbVaisseaux /flotteAttaquante.quantiteVaisseaux))
             print("ratio r : " + str(r))
             pourcentageSurprise = 0
             # 2-determiner pourcentageSurprise :
@@ -566,42 +586,85 @@ class Controleur:
             if(random.randrange(100) < pourcentageSurprise):
                 tourAttaque = True # situation d'une attaque surprise
         
-        while(nbVaisseauxAttaquant > 0 and nbVaisseauxDefendant > 0):
+        while(flotteAttaquante.quantiteVaisseaux > 0 and etoileDefendante.nbVaisseaux > 0):
             if(tourAttaque): # l'attaquant attaque 
-                pourcentage = 50
+                pourcentage = 100
                 nbTemp = 0
-                for i in range(0,nbVaisseauxDefendant):
+                for i in range(0,etoileDefendante.nbVaisseaux):
                     if(random.randrange(100) < pourcentage):
                         nbTemp = nbTemp+1
-                nbVaisseauxDefendant = nbVaisseauxDefendant-nbTemp
-                print("nbVaisseauxDefendant : " + str(nbVaisseauxDefendant))
+                etoileDefendante.nbVaisseaux = etoileDefendante.nbVaisseaux-nbTemp
+                print("nbVaisseauxDefendant : " + str(etoileDefendante.nbVaisseaux))
                 tourAttaque = False
             
             else : # le defenseur attaque
                 pourcentage = 70
                 nbTemp = 0
-                for i in range(0,nbVaisseauxAttaquant):
+                for i in range(0,flotteAttaquante.quantiteVaisseaux):
                     if(random.randrange(100) < pourcentage):
                         nbTemp = nbTemp+1
-                nbVaisseauxAttaquant = nbVaisseauxAttaquant-nbTemp
-                print("nbVaisseauxAttaquant : " + str(nbVaisseauxAttaquant))
+                flotteAttaquante.quantiteVaisseaux = flotteAttaquante.quantiteVaisseaux-nbTemp
+                print("nbVaisseauxAttaquant : " + str(flotteAttaquante.quantiteVaisseaux))
                 tourAttaque = True    
                 
                 
-        if(nbVaisseauxDefendant == 0): #attaquants gagnent
+        if(etoileDefendante.nbVaisseaux == 0): #attaquants gagnent
             print("Attaquant gagne")
-            print("Nombre de vaisseaux attaquants restants : " + str(nbVaisseauxAttaquant))
-            return True
-            #1-enlever l'etoile de la liste de la civilisation defendante
-            #2-ajouter l'etoile de la liste de la civilisation attaquante
+            print("Nombre de vaisseaux attaquants restants : " + str(flotteAttaquante.quantiteVaisseaux))
+            
+            for i in range(0, len(self.modele.listeEtoiles)):
+
+                #1-enlever l'etoile de la liste de la civilisation defendante
+                if(self.modele.listeEtoiles[i] == etoileDefendante):
+
+                    if(etoileDefendante.proprietaire == 1): #Si le defendant est Humain
+                        self.modele.humain.listePossessions.remove(i) #Remove i de la liste, i n'est pas la position mais la valeur
+
+                    elif(etoileDefendante.proprietaire == 2): #Si le defendant est Gubrus
+                        self.modele.gubrus.listePossessions.remove(i) #Remove i de la liste, i n'est pas la position mais la valeur
+
+                    elif(etoileDefendante.proprietaire == 1): #Si le defendant est Czin
+                               self.modele.czin.listePossessions.remove(i) #Remove i de la liste, i n'est pas la position mais la valeur
+
+                    #2-ajouter l'etoile de la liste de la civilisation attaquante
+                    if(flotteAttaquante.proprietaire == 1):
+                        self.modele.humain.listePossessions.append(i)
+                           
+                    elif(flotteAttaquante.proprietaire == 2):
+                        self.modele.gubrus.listePossessions.append(i)
+
+                    elif(flotteAttaquante.proprietaire == 3):
+                        self.modele.czin.listePossessions.append(i)
+
+                    break
+                           
             #3-actualiser le nombre de vaisseaux sur l'etoile qui change de proprietaire
+            etoileDefendante.proprietaire = flotteAttaquante.proprietaire
+            etoileDefendante.nbVaisseaux = flotteAttaquante.quantiteVaisseaux
+            etoileDefendante.niveauInfo = 3
+            
+            return True
                
         else:# (nbVaisseauxAttaquant == 0) et donc defendants gagnent
             print("Defendant gagne")
-            print("Nombre de vaisseaux defendants restants : " + str(nbVaisseauxDefendant))
-            return False
+            print("Nombre de vaisseaux defendants restants : " + str(etoileDefendante.nbVaisseaux))
+
             #1- eliminer la flotte attaquante de la liste
-            #2-actualiser le nombre de vaisseaux sur l'etoile defendante
+            if(flotteAttaquante.proprietaire == 1):
+                self.modele.humain.listeFlottes.remove(flotteAttaquante)
+
+            elif(flotteAttaquante.proprietaire == 2):
+                self.modele.gubrus.listeFlottes.remove(flotteAttaquante)
+
+            elif(flotteAttaquante.proprietaire == 3):
+                self.modele.czin.listeFlottes.remove(flotteAttaquante)
+
+            #Changer le niveau d'info
+            if(etoileDefendante.niveauInfo < 3):
+                etoileDefendante.niveauInfo += 1
+           
+                           
+            return False
 
     def envoyerFlotte(self):
         if(self.vue.choisirNbVaisseaux.get() > 0):

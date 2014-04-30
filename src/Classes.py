@@ -1,4 +1,6 @@
 import math
+import random
+
 
 #Contiendra toutes les informations relatives aux Humains (Joueur)
 class Humains:
@@ -21,7 +23,7 @@ class Gubrus:
         
         # variables
         self.parent = parent
-        self.mort = False
+        self.mort = True
         self.etoileMere = 0
         self.nbEtoiles = 0
         self.listePossessions = []
@@ -77,7 +79,7 @@ class Czins:
         self.parent = parent
         self.etoileMere = 0
         self.base = 0
-        self.mort = False
+        self.mort = True
         self.nbEtoiles = 0
         self.listePossessions = [] #initialisation de la liste des Etoiles possedees par les Czins
         self.listeFlottes = [] #initialisation de la liste de flottes creees par les Czins
@@ -199,11 +201,10 @@ class Etoile:
         
 
     def genererVaisseau(self):
-        pass
+        for i in range(0, self.nbManufactures):
+            r = random.randint(0,6)
+            self.nbVaisseaux += r
+            
         
-    def calculerValeurGrappe(self):
-        pass
     
-    def calculerValeurBase(self):
-        pass
 
